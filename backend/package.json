@@ -1,6 +1,6 @@
 {
   "name": "fueleu-backend",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "FuelEU Maritime Compliance Platform - Backend",
   "main": "dist/index.js",
   "scripts": {
