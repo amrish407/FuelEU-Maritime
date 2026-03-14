@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 env:
   NODE_VERSION: '20'
 
@@ -40,11 +45,12 @@ jobs:
       - name: Run unit tests
         run: npm run test:unit -- --coverage
 
-      - name: Upload coverage
+      - name: Upload backend coverage artifact
         uses: actions/upload-artifact@v4
         with:
           name: backend-coverage
           path: backend/coverage/
+          retention-days: 30
 
   # ─── Backend Integration Tests ────────────────────────────────────────────
   backend-integration:
@@ -130,11 +136,159 @@ jobs:
       - name: Run tests with coverage
         run: npm run test:coverage
 
-      - name: Upload coverage
+      - name: Upload frontend coverage artifact
         uses: actions/upload-artifact@v4
         with:
           name: frontend-coverage
           path: frontend/coverage/
+          retention-days: 30
 
-      - name: Build check
+      - name: Build frontend
         run: npm run build
+
+      - name: Upload frontend build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist/
+          retention-days: 30
+
+  # ─── Deploy to GitHub Pages ───────────────────────────────────────────────
+  deploy-pages:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: [backend-test, frontend-test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download frontend build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist/
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist/
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  # ─── Tag & Release ────────────────────────────────────────────────────────
+  release:
+    name: Tag & Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [backend-integration, frontend-test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from package.json
+        id: version
+        run: |
+          VERSION=$(node -p "require('./backend/package.json').version")
+          echo "version=v${VERSION}" >> $GITHUB_OUTPUT
+          echo "Detected version: v${VERSION}"
+
+      - name: Check if tag already exists
+        id: tag_check
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Tag $VERSION already exists — skipping release"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Tag $VERSION does not exist — will create release"
+          fi
+
+      - name: Download frontend build artifact
+        if: steps.tag_check.outputs.exists == 'false'
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist/
+
+      - name: Download backend coverage artifact
+        if: steps.tag_check.outputs.exists == 'false'
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage/
+
+      - name: Create frontend release zip
+        if: steps.tag_check.outputs.exists == 'false'
+        run: |
+          cd frontend/dist
+          zip -r ../../fueleu-frontend-${{ steps.version.outputs.version }}.zip .
+          echo "✅ Frontend zip created"
+
+      - name: Create full source zip
+        if: steps.tag_check.outputs.exists == 'false'
+        run: |
+          zip -r fueleu-source-${{ steps.version.outputs.version }}.zip . \
+            --exclude "*/node_modules/*" \
+            --exclude "*/.git/*" \
+            --exclude "*/dist/*" \
+            --exclude "*/coverage/*"
+          echo "✅ Source zip created"
+
+      - name: Create Git tag
+        if: steps.tag_check.outputs.exists == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a ${{ steps.version.outputs.version }} \
+            -m "Release ${{ steps.version.outputs.version }} — FuelEU Maritime"
+          git push origin ${{ steps.version.outputs.version }}
+
+      - name: Create GitHub Release
+        if: steps.tag_check.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: "🚢 FuelEU Maritime ${{ steps.version.outputs.version }}"
+          body: |
+            ## FuelEU Maritime Compliance Platform ${{ steps.version.outputs.version }}
+
+            ### ✅ What's included
+            - React + TypeScript frontend dashboard (Routes, Compare, Banking, Pooling)
+            - Node.js + Express backend — Hexagonal Architecture
+            - FuelEU Maritime Regulation (EU) 2023/1805 compliance logic
+            - Article 20 Banking & Article 21 Pooling
+            - Full unit test suite passing
+
+            ### 📦 Release Assets
+            | File | Description |
+            |------|-------------|
+            | `fueleu-frontend-${{ steps.version.outputs.version }}.zip` | Built frontend — ready to serve |
+            | `fueleu-source-${{ steps.version.outputs.version }}.zip` | Full source code |
+
+            ### 🚀 Run locally
+```bash
+            cd backend && npm install && npm run dev
+            cd frontend && npm install && npm run dev
+```
+
+            ### 📋 Commit
+            `${{ github.sha }}`
+          files: |
+            fueleu-frontend-${{ steps.version.outputs.version }}.zip
+            fueleu-source-${{ steps.version.outputs.version }}.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
