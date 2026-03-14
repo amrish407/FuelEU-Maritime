@@ -2,13 +2,14 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
   },
+  base: command === 'build' ? '/FuelEU-Maritime/' : '/',
   server: {
     port: 5173,
     proxy: {
@@ -28,4 +29,4 @@ export default defineConfig({
       reporter: ['text', 'html'],
     },
   },
-});
+}));
