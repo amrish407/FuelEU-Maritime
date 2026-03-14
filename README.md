@@ -2,111 +2,159 @@
 
 > Full-stack compliance dashboard implementing **FuelEU Maritime Regulation (EU) 2023/1805** — Articles 20–21 (Banking & Pooling), Annex IV.
 
-## Architecture Overview
+## 🔗 Links
 
-This project follows **Hexagonal Architecture** (Ports & Adapters / Clean Architecture) in both frontend and backend:
+| Resource | URL |
+|----------|-----|
+| **GitHub Repository** | `https://github.com/amrish407/FuelEU-Maritime` |
+| **Live Dashboard (GitHub Pages)** | `https://amrish407.github.io/FuelEU-Maritime/` |
+| **CI/CD Pipeline** | `https://github.com/amrish407/FuelEU-Maritime/actions/workflows/ci.yml` |
+
+---
+
+## 📸 Screenshots
+
+### Dashboard — Routes Tab
+![alt text](image.png)
+> _Screenshot: Routes tab showing all 5 vessels with GHG intensity, compliance status and Set Baseline action_
+
+### Dashboard — Compare Tab
+![alt text](image-1.png)
+> _Screenshot: Compare tab showing bar chart with GHG intensity vs FuelEU 2025 target (89.3368 gCO₂e/MJ)_
+
+### Dashboard — Banking Tab
+![alt text](image-2.png)
+> _Screenshot: Banking tab showing Compliance Balance KPIs and bank/apply surplus actions_
+
+### Dashboard — Pooling Tab
+![alt text](image-3.png)
+> _Screenshot: Pooling tab showing pool builder with member CB before/after allocation_
+
+### CI/CD Pipeline
+![alt text](image-4.png)
+> _Screenshot: GitHub Actions showing all jobs passing — Backend Tests → Integration Tests → Frontend Tests → Deploy → Release_
+
+### GitHub Release
+![alt text](image-5.png)
+> _Screenshot: GitHub Releases page showing tagged release with frontend and source zip artifacts_
+
+---
+
+## 🏗️ Architecture Overview
+
+This project follows **Hexagonal Architecture** (Ports & Adapters / Clean Architecture) in both frontend and backend. The core domain is completely framework-free and independently testable.
 
 ```
-Core (Domain + Use-Cases + Ports)   ←  no framework dependencies
-        ↓
-Adapters (inbound HTTP / outbound Postgres / React UI)
-        ↓
-Infrastructure (Express server, PG connection, Vite/React)
+┌─────────────────────────────────────────────────────┐
+│                    CORE (Domain)                     │
+│   Route, Compliance, Banking, Pooling entities       │
+│   Use-Cases: RouteUseCases, BankingUseCases, etc.   │
+│   Ports: IRouteRepository, IBankingRepository, etc. │
+│              NO framework dependencies               │
+└──────────────────────┬──────────────────────────────┘
+                       │
+         ┌─────────────┴─────────────┐
+         ▼                           ▼
+┌─────────────────┐       ┌──────────────────────┐
+│ Inbound Adapters│       │ Outbound Adapters     │
+│ Express Routers │       │ PostgreSQL Repos      │
+│ React Components│       │ API Client (fetch)    │
+│ Custom Hooks    │       │                       │
+└─────────────────┘       └──────────────────────┘
+         │                           │
+         ▼                           ▼
+┌─────────────────┐       ┌──────────────────────┐
+│ Infrastructure  │       │ Infrastructure        │
+│ Vite / React    │       │ Express Server        │
+│ TailwindCSS     │       │ PostgreSQL 18         │
+└─────────────────┘       └──────────────────────┘
 ```
 
-The domain layer is framework-free and fully unit-testable. Frameworks touch only the adapters and infrastructure layers.
-
-### Backend structure
+### Backend folder structure
 ```
 backend/src/
-  core/
-    domain/       # Route, Compliance, Banking, Pooling entities + formulas
-    application/  # Use-cases: RouteUseCases, ComplianceUseCases, etc.
-    ports/        # Repository interfaces (IRouteRepository, etc.)
-  adapters/
-    inbound/http/    # Express route handlers
-    outbound/postgres/ # PostgreSQL repository implementations
-  infrastructure/
-    db/           # connection.ts, migrate.ts, seed.ts
-    server/       # app.ts (DI wiring), index.ts
-  __tests__/
-    unit/         # Pure domain + use-case tests
-    integration/  # HTTP endpoint tests (Supertest)
+├── core/
+│   ├── domain/           # Route, Compliance, Banking, Pooling + formulas
+│   ├── application/      # Use-cases (business logic)
+│   └── ports/            # Repository interfaces (contracts)
+├── adapters/
+│   ├── inbound/http/     # Express route handlers
+│   └── outbound/postgres/ # PostgreSQL implementations
+├── infrastructure/
+│   ├── db/               # connection, migrate, seed
+│   └── server/           # app.ts (DI wiring), index.ts
+└── __tests__/
+    └── unit/             # Pure domain + use-case tests
 ```
 
-### Frontend structure
+### Frontend folder structure
 ```
 frontend/src/
-  core/domain/    # Shared types, constants (no React deps)
-  adapters/
-    infrastructure/ # apiClient.ts (fetch wrapper)
-    ui/             # Custom hooks + React tab components
-  __tests__/      # Vitest tests
+├── core/domain/          # Shared types and constants (no React deps)
+├── adapters/
+│   ├── infrastructure/   # apiClient.ts (fetch wrapper)
+│   └── ui/               # Custom hooks + React tab components
+└── __tests__/            # Vitest component and domain tests
 ```
 
 ---
 
-## Tech Stack
+## 🧮 Core FuelEU Formulas (Annex IV)
+
+```
+Target Intensity (2025) = 89.3368 gCO₂e/MJ  (−2% vs 2024 baseline 91.16)
+Energy in Scope (MJ)    = fuelConsumption(t) × 41,000 MJ/t
+Compliance Balance (CB) = (Target − Actual) × Energy in Scope
+  CB > 0 → Surplus  |  CB < 0 → Deficit
+
+Comparison % Diff       = ((comparison / baseline) − 1) × 100
+```
+
+---
+
+## 🛠️ Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Frontend | React 18, TypeScript (strict), TailwindCSS, Recharts |
 | Backend | Node.js 20, TypeScript (strict), Express 4 |
-| Database | PostgreSQL 15 |
+| Database | PostgreSQL 18 |
 | Testing | Jest + Supertest (backend), Vitest + Testing Library (frontend) |
 | CI/CD | GitHub Actions |
-| Containerization | Docker + Docker Compose |
+| Hosting | GitHub Pages (frontend) |
 
 ---
 
-## Setup & Run
+## 🚀 Setup & Run Instructions
 
-### Option A — Docker Compose (Recommended, zero setup)
+### Prerequisites
+- Node.js 20+ — https://nodejs.org
+- PostgreSQL 18 — https://www.postgresql.org/download/windows/
 
+### Step 1 — Create the database
 ```bash
-# Clone the repo
-git clone https://github.com/your-username/fueleu-maritime.git
-cd fueleu-maritime
-
-# Build and start all services (postgres + backend + frontend)
-docker-compose up --build
-
-# App will be available at:
-# Frontend: http://localhost
-# Backend API: http://localhost:3001
-# Health check: http://localhost:3001/health
+psql -U postgres -c "CREATE DATABASE fueleu_db;"
 ```
 
-### Option B — Local Development (VSCode)
-
-**Prerequisites:** Node.js 20+, PostgreSQL 15 running locally
-
-#### 1. Start PostgreSQL only via Docker
-```bash
-docker-compose -f docker-compose.dev.yml up -d
-```
-
-#### 2. Backend setup
+### Step 2 — Backend setup
 ```bash
 cd backend
-
-# Copy environment file
-cp .env.example .env
-# Edit .env if needed (default: postgres/postgres on localhost:5432)
 
 # Install dependencies
 npm install
 
-# Run database migrations + seed
+# Run database migrations
 npm run db:migrate
+
+# Seed sample data (5 routes)
 npm run db:seed
 
-# Start dev server (hot reload)
+# Start development server
 npm run dev
 # → API running at http://localhost:3001
 ```
 
-#### 3. Frontend setup (new terminal)
+### Step 3 — Frontend setup (new terminal)
 ```bash
 cd frontend
 
@@ -120,14 +168,14 @@ npm run dev
 
 ---
 
-## Running Tests
+## 🧪 Running Tests
 
 ### Backend tests
 ```bash
 cd backend
 
 # All tests
-npm test
+npm run test
 
 # Unit tests only (no DB required)
 npm run test:unit
@@ -144,15 +192,21 @@ npm run test:coverage
 cd frontend
 
 # All tests
-npm test
+npm run test
 
 # Coverage report
 npm run test:coverage
 ```
 
+### Expected results
+```
+Backend:  30 passed, 0 failed
+Frontend: 13 passed, 0 failed
+```
+
 ---
 
-## API Endpoints
+## 🔗 API Endpoints
 
 ### Routes
 | Method | Endpoint | Description |
@@ -164,7 +218,7 @@ npm run test:coverage
 ### Compliance
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/compliance/cb?shipId&year` | Compute & store CB snapshot |
+| GET | `/compliance/cb?shipId&year` | Compute and store CB snapshot |
 | GET | `/compliance/adjusted-cb?shipId&year` | CB after bank applications |
 
 ### Banking (Article 20)
@@ -183,62 +237,81 @@ npm run test:coverage
 
 ---
 
-## Core Formulas (FuelEU Annex IV)
+## 📊 Seed Data
+
+| Route ID | Vessel Type | Fuel Type | Year | GHG Intensity | Compliant |
+|----------|-------------|-----------|------|---------------|-----------|
+| R001 | Container | HFO | 2024 | 91.0 | ❌ |
+| R002 | BulkCarrier | LNG | 2024 | 88.0 | ✅ |
+| R003 | Tanker | MGO | 2024 | 93.5 | ❌ |
+| R004 | RoRo | HFO | 2025 | 89.2 | ✅ |
+| R005 | Container | LNG | 2025 | 90.5 | ❌ |
+
+---
+
+## ⚙️ CI/CD Pipeline
+
+The GitHub Actions pipeline runs automatically on every push to `main`:
 
 ```
-Target Intensity (2025) = 89.3368 gCO₂e/MJ
-Energy in Scope (MJ)    = fuelConsumption(t) × 41,000 MJ/t
-Compliance Balance      = (Target − Actual) × Energy in Scope
-  > 0 → Surplus  |  < 0 → Deficit
-
-Comparison % Diff       = ((comparison / baseline) − 1) × 100
+git push origin main
+        ↓
+┌─────────────────────────────────┐
+│ 1. Backend Unit Tests           │
+│    → TypeScript check           │
+│    → ESLint                     │
+│    → Jest unit tests            │
+│    → Upload coverage artifact   │
+└────────────────┬────────────────┘
+                 ↓
+┌─────────────────────────────────┐
+│ 2. Backend Integration Tests    │
+│    → Spin up PostgreSQL service │
+│    → Run migrations + seed      │
+│    → Jest integration tests     │
+└────────────────┬────────────────┘
+                 ↓
+┌─────────────────────────────────┐
+│ 3. Frontend Tests + Build       │
+│    → TypeScript check           │
+│    → ESLint                     │
+│    → Vitest + coverage          │
+│    → Vite production build      │
+│    → Upload build artifact      │
+└────────────────┬────────────────┘
+                 ↓
+      ┌──────────┴──────────┐
+      ▼                     ▼
+┌──────────────┐   ┌────────────────────┐
+│ 4. Deploy to │   │ 5. Tag & Release   │
+│ GitHub Pages │   │ → Create git tag   │
+│              │   │ → Upload 2 zips:   │
+│ Live at:     │   │   frontend build   │
+│ github.io/.. │   │   full source      │
+└──────────────┘   └────────────────────┘
 ```
 
 ---
 
-## Sample API Requests
+## 📦 Submission Checklist
 
-```bash
-# Get all routes
-curl http://localhost:3001/routes
-
-# Set R001 as baseline
-curl -X POST http://localhost:3001/routes/R001/baseline
-
-# Get compliance balance for R002 in 2024
-curl "http://localhost:3001/compliance/cb?shipId=R002&year=2024"
-
-# Bank surplus
-curl -X POST http://localhost:3001/banking/bank \
-  -H "Content-Type: application/json" \
-  -d '{"shipId":"R002","year":2024,"amount":500000}'
-
-# Create pool
-curl -X POST http://localhost:3001/pools \
-  -H "Content-Type: application/json" \
-  -d '{"year":2024,"memberShipIds":["R002","R003"]}'
-```
+- ✅ Public GitHub repository
+- ✅ `/frontend` folder — React + TypeScript + TailwindCSS
+- ✅ `/backend` folder — Node.js + TypeScript + PostgreSQL
+- ✅ Hexagonal Architecture (Ports & Adapters)
+- ✅ `npm run dev` works
+- ✅ `npm run test` passes
+- ✅ `AGENT_WORKFLOW.md` — AI agent documentation
+- ✅ `REFLECTION.md` — reflection essay
+- ✅ `README.md` — this file
+- ✅ Incremental Git commit history
+- ✅ GitHub Actions CI/CD pipeline
+- ✅ GitHub Pages deployment
+- ✅ Tagged releases with artifacts
 
 ---
 
-## Environment Variables
+## 📘 Reference
 
-**Backend (`.env`):**
-```
-PORT=3001
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=fueleu_db
-DB_USER=postgres
-DB_PASSWORD=postgres
-NODE_ENV=development
-CORS_ORIGIN=http://localhost:5173
-```
-
----
-
-## Reference
-
-- Fuel EU Maritime Regulation **(EU) 2023/1805**, Annex IV — GHG intensity targets
-- Articles 20–21 — Banking and Pooling rules
+- **Fuel EU Maritime Regulation (EU) 2023/1805** — Annex IV, Articles 20–21
 - ESSF SAPS WS1 FuelEU calculation methodologies (May 2025)
