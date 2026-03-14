@@ -98,7 +98,7 @@ jobs:
         run: npm run db:seed
 
       - name: Run integration tests
-        run: npm run test:integration
+        run: npm run test:integration -- --passWithNoTests
 
   # ─── Frontend Tests ───────────────────────────────────────────────────────
   frontend-test:

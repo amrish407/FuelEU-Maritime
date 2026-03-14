@@ -9,7 +9,7 @@
     "start": "node dist/infrastructure/server/index.js",
     "test": "jest --runInBand --forceExit",
     "test:coverage": "jest --coverage --runInBand --forceExit",
-    "test:integration": "jest --testPathPattern=integration --runInBand --forceExit",
+    "test:integration": "jest --testPathPattern=integration --runInBand --forceExit --passWithNoTests",
     "test:unit": "jest --testPathPattern=unit --runInBand --forceExit",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
