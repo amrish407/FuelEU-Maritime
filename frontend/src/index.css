@@ -1,0 +1,152 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-ocean-deep: #041e42;
+    --color-ocean-mid: #0a3a6e;
+    --color-ocean-light: #1a5fa8;
+    --color-accent: #00d4ff;
+    --color-accent-warm: #f0a500;
+    --color-surplus: #10b981;
+    --color-deficit: #ef4444;
+    --color-neutral: #94a3b8;
+    --color-surface: rgba(255, 255, 255, 0.04);
+    --color-surface-hover: rgba(255, 255, 255, 0.08);
+    --color-border: rgba(255, 255, 255, 0.1);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--color-ocean-deep);
+    color: #e2e8f0;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: 'Syne', sans-serif;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply rounded-2xl border;
+    background: var(--color-surface);
+    border-color: var(--color-border);
+    backdrop-filter: blur(12px);
+  }
+
+  .glass-card-hover {
+    @apply glass-card transition-all duration-200;
+  }
+
+  .glass-card-hover:hover {
+    background: var(--color-surface-hover);
+    border-color: rgba(0, 212, 255, 0.2);
+  }
+
+  .btn-primary {
+    @apply px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed;
+    background: linear-gradient(135deg, #0284c7, #0ea5e9);
+    color: white;
+  }
+
+  .btn-primary:not(:disabled):hover {
+    background: linear-gradient(135deg, #0369a1, #0284c7);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+  }
+
+  .btn-success {
+    @apply px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed;
+    background: linear-gradient(135deg, #059669, #10b981);
+    color: white;
+  }
+
+  .btn-success:not(:disabled):hover {
+    background: linear-gradient(135deg, #047857, #059669);
+    transform: translateY(-1px);
+  }
+
+  .btn-danger {
+    @apply px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed;
+    background: linear-gradient(135deg, #dc2626, #ef4444);
+    color: white;
+  }
+
+  .btn-ghost {
+    @apply px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: #94a3b8;
+  }
+
+  .btn-ghost:hover {
+    background: var(--color-surface-hover);
+    color: #e2e8f0;
+  }
+
+  .input-field {
+    @apply px-3 py-2 rounded-lg text-sm focus:outline-none transition-all duration-200;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--color-border);
+    color: #e2e8f0;
+  }
+
+  .input-field:focus {
+    border-color: rgba(0, 212, 255, 0.4);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+  }
+
+  .kpi-card {
+    @apply glass-card p-5 flex flex-col gap-2;
+  }
+
+  .kpi-value {
+    @apply text-2xl font-bold;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .badge-surplus {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+
+  .badge-deficit {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+
+  .tab-active {
+    color: var(--color-accent);
+    border-bottom: 2px solid var(--color-accent);
+  }
+
+  .table-row-hover:hover {
+    background: var(--color-surface-hover);
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+
+/* Animated ocean background */
+.ocean-bg {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(10, 58, 110, 0.4) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(2, 132, 199, 0.15) 0%, transparent 50%),
+    linear-gradient(180deg, #041e42 0%, #061528 100%);
+}
