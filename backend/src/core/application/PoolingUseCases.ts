@@ -1,4 +1,4 @@
-import { CreatePoolInput, PoolAllocationResult, PoolWithMembers } from '../domain/Pooling';
+import {PoolAllocationResult, PoolWithMembers } from '../domain/Pooling';
 import { IPoolingRepository } from '../ports/IPoolingRepository';
 import { IComplianceRepository } from '../ports/IComplianceRepository';
 
